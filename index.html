@@ -1,350 +1,107 @@
 <!doctype html>
 <html lang="th" class="h-full">
- <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Image Table Generator</title>
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-  <script src="/_sdk/element_sdk.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
-  <style>
-    * { font-family: 'Noto Sans Thai', 'Space Mono', sans-serif; }
-    .drop-zone { transition: all 0.3s ease; }
-    .drop-zone.dragover { border-color: #f59e0b; background: rgba(245,158,11,0.08); transform: scale(1.01); }
-    .file-card { animation: slideUp 0.35s ease forwards; opacity: 0; }
-    @keyframes slideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-    .table-appear { animation: fadeScale 0.4s ease forwards; }
-    @keyframes fadeScale { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
-    .toast { animation: toastIn 0.3s ease forwards; }
-    @keyframes toastIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #1a1a2e; }
-    ::-webkit-scrollbar-thumb { background: #f59e0b; border-radius: 3px; }
-  </style>
-  <style>body { box-sizing: border-box; }</style>
-  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
- </head>
- <body class="h-full">
-  <div id="app" class="w-full h-full overflow-auto" style="background: #0f0f23;">
-   <!-- Toast container -->
-   <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
-   <div class="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-    <!-- Header -->
-    <header class="text-center mb-10">
-     <div class="inline-flex items-center gap-3 mb-3">
-      <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #f59e0b;">
-       <i data-lucide="image" style="width:22px;height:22px;color:#0f0f23;"></i>
-      </div>
-      <h1 id="page-title" class="text-3xl sm:text-4xl font-bold tracking-tight" style="color: #f5f5f0;">Image Table Generator</h1>
-     </div>
-     <p class="text-sm" style="color: #7a7a8e;">อัพโหลดรูปภาพ → จัดเรียงคี่/คู่ → ส่งออก CSV</p>
-    </header><!-- Upload Zone -->
-    <section id="upload-section" class="mb-8">
-     <div id="drop-zone" class="drop-zone relative border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all" style="border-color: #2a2a4a; background: #16162b;">
-      <input type="file" id="file-input" multiple accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
-      <div class="flex flex-col items-center gap-3">
-       <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background: rgba(245,158,11,0.12);">
-        <i data-lucide="upload-cloud" style="width:32px;height:32px;color:#f59e0b;"></i>
-       </div>
-       <p class="text-lg font-semibold" style="color: #f5f5f0;">ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือก</p>
-       <p class="text-xs" style="color: #7a7a8e;">รองรับไฟล์รูปภาพทุกชนิด • อัพโหลดได้หลายไฟล์</p>
-      </div>
-     </div>
-    </section><!-- File List -->
-    <section id="file-list-section" class="mb-8 hidden">
-     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold flex items-center gap-2" style="color: #f5f5f0;"><i data-lucide="files" style="width:18px;height:18px;color:#f59e0b;"></i> ไฟล์ที่อัพโหลด (<span id="file-count">0</span>)</h2><button id="clear-btn" class="text-xs px-3 py-1.5 rounded-lg font-medium transition-all hover:opacity-80" style="background: #2a2a4a; color: #f59e0b;"> <span class="flex items-center gap-1"><i data-lucide="trash-2" style="width:12px;height:12px;"></i> ล้างทั้งหมด</span> </button>
-     </div>
-     <div id="file-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div><!-- Generate Table Button -->
-     <div class="mt-6 text-center">
-      <button id="generate-btn" class="inline-flex items-center gap-2 px-8 py-3 rounded-xl text-base font-bold transition-all hover:scale-105 active:scale-95" style="background: #f59e0b; color: #0f0f23;"> <i data-lucide="table" style="width:20px;height:20px;"></i> สร้างตาราง </button>
-     </div>
-    </section><!-- Table Section -->
-    <section id="table-section" class="mb-8 hidden">
-     <div class="rounded-2xl overflow-hidden" style="background: #16162b; border: 1px solid #2a2a4a;">
-      <div class="flex items-center justify-between px-6 py-4" style="border-bottom: 1px solid #2a2a4a;">
-       <h2 class="text-lg font-semibold flex items-center gap-2" style="color: #f5f5f0;"><i data-lucide="layout-grid" style="width:18px;height:18px;color:#f59e0b;"></i> ตารางจัดเรียง คี่-คู่</h2><button id="download-btn" class="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all hover:scale-105 active:scale-95" style="background: #22c55e; color: #0f0f23;"> <i data-lucide="download" style="width:16px;height:16px;"></i> ดาวน์โหลด CSV </button>
-      </div>
-      <div class="overflow-x-auto">
-       <table class="w-full">
-        <thead>
-         <tr style="background: #1e1e38;">
-          <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: #f59e0b;">ลำดับ</th>
-          <th id="col1-header" class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: #f59e0b;">คอลัมน์ 1 (เลขคี่)</th>
-          <th id="col2-header" class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: #f59e0b;">คอลัมน์ 2 (เลขคู่)</th>
-         </tr>
-        </thead>
-        <tbody id="table-body"></tbody>
-       </table>
-      </div>
-     </div>
-    </section>
-   </div>
-  </div>
-  <script>
-    // State
-    let uploadedFiles = [];
-    let tableData = [];
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Table Generator</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Noto Sans Thai', 'Space Mono', sans-serif; }
+        .drop-zone { transition: all 0.3s ease; }
+        .drop-zone.dragover { border-color: #f59e0b; background: rgba(245,158,11,0.08); transform: scale(1.01); }
+        .file-card { animation: slideUp 0.35s ease forwards; opacity: 0; }
+        @keyframes slideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        .table-appear { animation: fadeScale 0.4s ease forwards; }
+        @keyframes fadeScale { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
+        .toast { animation: toastIn 0.3s ease forwards; z-index: 100; }
+        @keyframes toastIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1a2e; }
+        ::-webkit-scrollbar-thumb { background: #f59e0b; border-radius: 3px; }
+    </style>
+</head>
+<body class="h-full">
+    <div id="app" class="w-full h-full overflow-auto" style="background: #0f0f23;">
+        <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+        
+        <div class="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+            <header class="text-center mb-10">
+                <div class="inline-flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: #f59e0b;">
+                        <i data-lucide="image" style="width:22px;height:22px;color:#0f0f23;"></i>
+                    </div>
+                    <h1 id="page-title" class="text-3xl sm:text-4xl font-bold tracking-tight" style="color: #f5f5f0;">Image Table Generator</h1>
+                </div>
+                <p class="text-sm" style="color: #7a7a8e;">อัพโหลดรูปภาพที่มีตัวเลขในชื่อ → จัดเรียงคี่/คู่อัตโนมัติ → ส่งออก CSV</p>
+            </header>
 
-    const defaultConfig = {
-      page_title: 'Image Table Generator',
-      column1_label: 'คอลัมน์ 1 (เลขคี่)',
-      column2_label: 'คอลัมน์ 2 (เลขคู่)',
-      background_color: '#0f0f23',
-      surface_color: '#16162b',
-      text_color: '#f5f5f0',
-      accent_color: '#f59e0b',
-      success_color: '#22c55e'
-    };
+            <section id="upload-section" class="mb-8">
+                <div id="drop-zone" class="drop-zone relative border-2 border-dashed rounded-2xl p-10 text-center cursor-pointer transition-all" style="border-color: #2a2a4a; background: #16162b;">
+                    <input type="file" id="file-input" multiple accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                    <div class="flex flex-col items-center gap-3 pointer-events-none">
+                        <div class="w-16 h-16 rounded-full flex items-center justify-center" style="background: rgba(245,158,11,0.12);">
+                            <i data-lucide="upload-cloud" style="width:32px;height:32px;color:#f59e0b;"></i>
+                        </div>
+                        <p class="text-lg font-semibold" style="color: #f5f5f0;">ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือก</p>
+                        <p class="text-xs" style="color: #7a7a8e;">ระบบจะตรวจจับตัวเลข "ตัวสุดท้าย" ในชื่อไฟล์เพื่อจัดลำดับ</p>
+                    </div>
+                </div>
+            </section>
 
-    // Element SDK
-    window.elementSdk.init({
-      defaultConfig,
-      onConfigChange: async (config) => {
-        const bg = config.background_color || defaultConfig.background_color;
-        const surface = config.surface_color || defaultConfig.surface_color;
-        const text = config.text_color || defaultConfig.text_color;
-        const accent = config.accent_color || defaultConfig.accent_color;
-        const success = config.success_color || defaultConfig.success_color;
+            <section id="file-list-section" class="mb-8 hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold flex items-center gap-2" style="color: #f5f5f0;">
+                        <i data-lucide="files" style="width:18px;height:18px;color:#f59e0b;"></i> 
+                        ไฟล์ที่อัพโหลด (<span id="file-count">0</span>)
+                    </h2>
+                    <button id="clear-btn" class="text-xs px-3 py-1.5 rounded-lg font-medium transition-all hover:opacity-80" style="background: #2a2a4a; color: #f59e0b;">
+                        <span class="flex items-center gap-1"><i data-lucide="trash-2" style="width:12px;height:12px;"></i> ล้างทั้งหมด</span>
+                    </button>
+                </div>
+                <div id="file-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6"></div>
+                <div class="text-center">
+                    <button id="generate-btn" class="inline-flex items-center gap-2 px-8 py-3 rounded-xl text-base font-bold transition-all hover:scale-105 active:scale-95" style="background: #f59e0b; color: #0f0f23;">
+                        <i data-lucide="table" style="width:20px;height:20px;"></i> สร้างตารางจัดเรียง
+                    </button>
+                </div>
+            </section>
 
-        document.getElementById('app').style.background = bg;
-        document.getElementById('page-title').textContent = config.page_title || defaultConfig.page_title;
-        document.getElementById('page-title').style.color = text;
-        document.getElementById('col1-header').textContent = config.column1_label || defaultConfig.column1_label;
-        document.getElementById('col2-header').textContent = config.column2_label || defaultConfig.column2_label;
+            <section id="table-section" class="mb-8 hidden">
+                <div class="rounded-2xl overflow-hidden shadow-2xl" style="background: #16162b; border: 1px solid #2a2a4a;">
+                    <div class="flex flex-col sm:flex-row items-center justify-between px-6 py-4 gap-4" style="border-bottom: 1px solid #2a2a4a;">
+                        <h2 class="text-lg font-semibold flex items-center gap-2" style="color: #f5f5f0;">
+                            <i data-lucide="layout-grid" style="width:18px;height:18px;color:#f59e0b;"></i> ผลลัพธ์การจับคู่
+                        </h2>
+                        <button id="download-btn" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all hover:scale-105 active:scale-95" style="background: #22c55e; color: #0f0f23;">
+                            <i data-lucide="download" style="width:16px;height:16px;"></i> ดาวน์โหลด CSV
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr style="background: #1e1e38;">
+                                    <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider" style="color: #f59e0b; width: 20%;">ชุดข้อมูล</th>
+                                    <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider" style="color: #f59e0b;">คอลัมน์ 1 (เลขคี่)</th>
+                                    <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider" style="color: #f59e0b;">คอลัมน์ 2 (เลขคู่)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
 
-        document.getElementById('drop-zone').style.background = surface;
-        document.getElementById('generate-btn').style.background = accent;
-        document.getElementById('download-btn').style.background = success;
+    <script>
+        // State Management
+        let uploadedFiles = [];
+        let tableData = [];
 
-        document.querySelectorAll('[data-lucide]').forEach(el => {
-          if (el.closest('#generate-btn') || el.closest('.drop-zone')) {
-            el.style.color = accent;
-          }
-        });
-      },
-      mapToCapabilities: (config) => ({
-        recolorables: [
-          { get: () => config.background_color || defaultConfig.background_color, set: (v) => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
-          { get: () => config.surface_color || defaultConfig.surface_color, set: (v) => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
-          { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
-          { get: () => config.accent_color || defaultConfig.accent_color, set: (v) => { config.accent_color = v; window.elementSdk.setConfig({ accent_color: v }); } },
-          { get: () => config.success_color || defaultConfig.success_color, set: (v) => { config.success_color = v; window.elementSdk.setConfig({ success_color: v }); } }
-        ],
-        borderables: [],
-        fontEditable: {
-          get: () => config.font_family || defaultConfig.font_family || 'Noto Sans Thai',
-          set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
-        },
-        fontSizeable: undefined
-      }),
-      mapToEditPanelValues: (config) => new Map([
-        ['page_title', config.page_title || defaultConfig.page_title],
-        ['column1_label', config.column1_label || defaultConfig.column1_label],
-        ['column2_label', config.column2_label || defaultConfig.column2_label]
-      ])
-    });
-
-    // DOM refs
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const fileListSection = document.getElementById('file-list-section');
-    const fileGrid = document.getElementById('file-grid');
-    const fileCount = document.getElementById('file-count');
-    const clearBtn = document.getElementById('clear-btn');
-    const generateBtn = document.getElementById('generate-btn');
-    const tableSection = document.getElementById('table-section');
-    const tableBody = document.getElementById('table-body');
-    const downloadBtn = document.getElementById('download-btn');
-
-    // Toast notification
-    function showToast(message, type = 'success') {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      toast.className = 'toast flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium shadow-lg';
-      const bgColor = type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : '#f59e0b';
-      toast.style.cssText = `background:${bgColor};color:#0f0f23;`;
-      toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info'}" style="width:16px;height:16px;"></i>${message}`;
-      container.appendChild(toast);
-      lucide.createIcons();
-      setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 3000);
-    }
-
-    // Extract number from filename
-    function extractNumber(filename) {
-      const nameOnly = filename.replace(/\.[^/.]+$/, '');
-      const matches = nameOnly.match(/\d+/g);
-      if (matches) return parseInt(matches[matches.length - 1], 10);
-      return null;
-    }
-
-    // Drag and drop
-    ['dragenter', 'dragover'].forEach(evt => {
-      dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    });
-    ['dragleave', 'drop'].forEach(evt => {
-      dropZone.addEventListener(evt, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
-    });
-    dropZone.addEventListener('drop', (e) => { handleFiles(e.dataTransfer.files); });
-    fileInput.addEventListener('change', (e) => { handleFiles(e.target.files); e.target.value = ''; });
-
-    function handleFiles(files) {
-      const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
-      if (imageFiles.length === 0) { showToast('กรุณาเลือกไฟล์รูปภาพ', 'error'); return; }
-
-      imageFiles.forEach(file => {
-        const num = extractNumber(file.name);
-        uploadedFiles.push({ file, name: file.name, number: num, url: URL.createObjectURL(file) });
-      });
-
-      renderFileList();
-      showToast(`เพิ่ม ${imageFiles.length} ไฟล์สำเร็จ`);
-      tableSection.classList.add('hidden');
-    }
-
-    function renderFileList() {
-      fileListSection.classList.toggle('hidden', uploadedFiles.length === 0);
-      fileCount.textContent = uploadedFiles.length;
-      fileGrid.innerHTML = '';
-
-      uploadedFiles.forEach((item, idx) => {
-        const card = document.createElement('div');
-        card.className = 'file-card relative rounded-xl overflow-hidden group';
-        card.style.cssText = 'background:#1e1e38;animation-delay:' + (idx * 0.05) + 's;';
-        const numBadge = item.number !== null
-          ? `<span class="absolute top-2 left-2 text-xs font-bold px-2 py-0.5 rounded-md" style="background:${item.number % 2 !== 0 ? '#f59e0b' : '#8b5cf6'};color:#0f0f23;">${item.number % 2 !== 0 ? 'คี่' : 'คู่'} #${item.number}</span>`
-          : `<span class="absolute top-2 left-2 text-xs font-bold px-2 py-0.5 rounded-md" style="background:#ef4444;color:#fff;">ไม่มีเลข</span>`;
-
-        card.innerHTML = `
-          <div class="aspect-square overflow-hidden">
-            <img src="${item.url}" alt="${item.name}" class="w-full h-full object-cover transition-transform group-hover:scale-110" loading="lazy"
-              onerror="this.style.background='#2a2a4a';this.alt='โหลดไม่ได้';">
-          </div>
-          ${numBadge}
-          <button onclick="removeFile(${idx})" class="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" style="background:rgba(239,68,68,0.9);color:#fff;">
-            <i data-lucide="x" style="width:12px;height:12px;"></i>
-          </button>
-          <div class="px-2 py-2">
-            <p class="text-xs truncate" style="color:#c4c4d4;" title="${item.name}">${item.name}</p>
-          </div>
-        `;
-        fileGrid.appendChild(card);
-      });
-      lucide.createIcons();
-    }
-
-    window.removeFile = function(idx) {
-      URL.revokeObjectURL(uploadedFiles[idx].url);
-      uploadedFiles.splice(idx, 1);
-      renderFileList();
-      tableSection.classList.add('hidden');
-    };
-
-    clearBtn.addEventListener('click', () => {
-      uploadedFiles.forEach(f => URL.revokeObjectURL(f.url));
-      uploadedFiles = [];
-      renderFileList();
-      tableSection.classList.add('hidden');
-      showToast('ล้างไฟล์ทั้งหมดแล้ว', 'info');
-    });
-
-    // Generate table
-    generateBtn.addEventListener('click', () => {
-      const withNumbers = uploadedFiles.filter(f => f.number !== null);
-      if (withNumbers.length === 0) {
-        showToast('ไม่พบไฟล์ที่มีตัวเลขในชื่อ', 'error');
-        return;
-      }
-
-      // Sort by number
-      withNumbers.sort((a, b) => a.number - b.number);
-
-      const oddFiles = withNumbers.filter(f => f.number % 2 !== 0).sort((a, b) => a.number - b.number);
-      const evenFiles = withNumbers.filter(f => f.number % 2 === 0).sort((a, b) => a.number - b.number);
-
-      // Pair them: row 1 = odd[0], even[0]; row 2 = odd[1], even[1]; ...
-      const maxRows = Math.max(oddFiles.length, evenFiles.length);
-      tableData = [];
-
-      for (let i = 0; i < maxRows; i++) {
-        tableData.push({
-          row: i + 1,
-          odd: oddFiles[i] ? oddFiles[i].name : '',
-          oddNum: oddFiles[i] ? oddFiles[i].number : null,
-          even: evenFiles[i] ? evenFiles[i].name : '',
-          evenNum: evenFiles[i] ? evenFiles[i].number : null
-        });
-      }
-
-      renderTable();
-      tableSection.classList.remove('hidden');
-      tableSection.classList.add('table-appear');
-      tableSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      showToast(`สร้างตาราง ${maxRows} แถวสำเร็จ`);
-    });
-
-    function renderTable() {
-      const config = window.elementSdk.config || {};
-      const col1Label = config.column1_label || defaultConfig.column1_label;
-      const col2Label = config.column2_label || defaultConfig.column2_label;
-
-      document.getElementById('col1-header').textContent = col1Label;
-      document.getElementById('col2-header').textContent = col2Label;
-
-      tableBody.innerHTML = '';
-      tableData.forEach((row, idx) => {
-        const tr = document.createElement('tr');
-        tr.style.cssText = idx % 2 === 0 ? 'background:#16162b;' : 'background:#1a1a30;';
-        tr.className = 'hover:bg-opacity-80 transition-colors';
-
-        // Display paired: oddNum - evenNum
-        const pairLabel = row.oddNum !== null && row.evenNum !== null
-          ? `${row.oddNum} - ${row.evenNum}`
-          : row.oddNum !== null ? `${row.oddNum}` : `${row.evenNum}`;
-
-        tr.innerHTML = `
-          <td class="px-6 py-3 text-sm font-mono font-bold" style="color:#f59e0b;">${pairLabel}</td>
-          <td class="px-6 py-3 text-sm" style="color:#f5f5f0;">${row.odd || '<span style="color:#7a7a8e;">—</span>'}</td>
-          <td class="px-6 py-3 text-sm" style="color:#f5f5f0;">${row.even || '<span style="color:#7a7a8e;">—</span>'}</td>
-        `;
-        tableBody.appendChild(tr);
-      });
-    }
-
-    // Download CSV
-    downloadBtn.addEventListener('click', () => {
-      if (tableData.length === 0) { showToast('ไม่มีข้อมูลให้ดาวน์โหลด', 'error'); return; }
-
-      const config = window.elementSdk.config || {};
-      const col1Label = config.column1_label || defaultConfig.column1_label;
-      const col2Label = config.column2_label || defaultConfig.column2_label;
-
-      // BOM for Thai characters in Excel
-      let csv = '\uFEFF';
-      csv += `ลำดับ,${col1Label},${col2Label}\n`;
-
-      tableData.forEach(row => {
-        const pairLabel = row.oddNum !== null && row.evenNum !== null
-          ? `${row.oddNum}-${row.evenNum}`
-          : row.oddNum !== null ? `${row.oddNum}` : `${row.evenNum}`;
-        const oddName = row.odd.includes(',') ? `"${row.odd}"` : row.odd;
-        const evenName = row.even.includes(',') ? `"${row.even}"` : row.even;
-        csv += `${pairLabel},${oddName},${evenName}\n`;
-      });
-
-      const element = document.createElement('a');
-      element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv));
-      element.setAttribute('download', 'image_table.csv');
-      element.style.display = 'none';
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
-
-      showToast('ดาวน์โหลด CSV สำเร็จ! ✅');
-    });
-
-    lucide.createIcons();
-  </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9dde1feb36cf732e',t:'MTc3Mzc3MjgxMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
-</html>
+        // DOM Elements
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileListSection = document.getElementById('file-list-section');
+        const fileGrid = document.getElementById('file-grid');
