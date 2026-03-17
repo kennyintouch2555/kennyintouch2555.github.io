@@ -15,7 +15,7 @@
         @keyframes slideUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
         .table-appear { animation: fadeScale 0.4s ease forwards; }
         @keyframes fadeScale { from { opacity:0; transform:scale(0.97); } to { opacity:1; transform:scale(1); } }
-        .toast { animation: toastIn 0.3s ease forwards; z-index: 100; }
+        .toast { animation: toastIn 0.3s ease forwards; }
         @keyframes toastIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #1a1a2e; }
@@ -25,7 +25,7 @@
 <body class="h-full">
     <div id="app" class="w-full h-full overflow-auto" style="background: #0f0f23;">
         <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
-        
+
         <div class="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
             <header class="text-center mb-10">
                 <div class="inline-flex items-center gap-3 mb-3">
@@ -34,7 +34,7 @@
                     </div>
                     <h1 id="page-title" class="text-3xl sm:text-4xl font-bold tracking-tight" style="color: #f5f5f0;">Image Table Generator</h1>
                 </div>
-                <p class="text-sm" style="color: #7a7a8e;">อัพโหลดรูปภาพที่มีตัวเลขในชื่อ → จัดเรียงคี่/คู่อัตโนมัติ → ส่งออก CSV</p>
+                <p class="text-sm" style="color: #7a7a8e;">อัพโหลดรูปภาพที่มีตัวเลข → จัดเรียงคี่/คู่อัตโนมัติ → ส่งออก CSV</p>
             </header>
 
             <section id="upload-section" class="mb-8">
@@ -45,7 +45,7 @@
                             <i data-lucide="upload-cloud" style="width:32px;height:32px;color:#f59e0b;"></i>
                         </div>
                         <p class="text-lg font-semibold" style="color: #f5f5f0;">ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือก</p>
-                        <p class="text-xs" style="color: #7a7a8e;">ระบบจะตรวจจับตัวเลข "ตัวสุดท้าย" ในชื่อไฟล์เพื่อจัดลำดับ</p>
+                        <p class="text-xs" style="color: #7a7a8e;">ระบบจะตรวจจับตัวเลข "ท้ายชื่อไฟล์" เพื่อแยกคี่/คู่</p>
                     </div>
                 </div>
             </section>
@@ -60,8 +60,8 @@
                         <span class="flex items-center gap-1"><i data-lucide="trash-2" style="width:12px;height:12px;"></i> ล้างทั้งหมด</span>
                     </button>
                 </div>
-                <div id="file-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6"></div>
-                <div class="text-center">
+                <div id="file-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
+                <div class="mt-6 text-center">
                     <button id="generate-btn" class="inline-flex items-center gap-2 px-8 py-3 rounded-xl text-base font-bold transition-all hover:scale-105 active:scale-95" style="background: #f59e0b; color: #0f0f23;">
                         <i data-lucide="table" style="width:20px;height:20px;"></i> สร้างตารางจัดเรียง
                     </button>
@@ -70,21 +70,21 @@
 
             <section id="table-section" class="mb-8 hidden">
                 <div class="rounded-2xl overflow-hidden shadow-2xl" style="background: #16162b; border: 1px solid #2a2a4a;">
-                    <div class="flex flex-col sm:flex-row items-center justify-between px-6 py-4 gap-4" style="border-bottom: 1px solid #2a2a4a;">
+                    <div class="flex items-center justify-between px-6 py-4" style="border-bottom: 1px solid #2a2a4a;">
                         <h2 class="text-lg font-semibold flex items-center gap-2" style="color: #f5f5f0;">
-                            <i data-lucide="layout-grid" style="width:18px;height:18px;color:#f59e0b;"></i> ผลลัพธ์การจับคู่
+                            <i data-lucide="layout-grid" style="width:18px;height:18px;color:#f59e0b;"></i> ตารางจัดเรียง คี่-คู่
                         </h2>
-                        <button id="download-btn" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all hover:scale-105 active:scale-95" style="background: #22c55e; color: #0f0f23;">
+                        <button id="download-btn" class="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold transition-all hover:scale-105 active:scale-95" style="background: #22c55e; color: #0f0f23;">
                             <i data-lucide="download" style="width:16px;height:16px;"></i> ดาวน์โหลด CSV
                         </button>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
+                        <table class="w-full">
                             <thead>
                                 <tr style="background: #1e1e38;">
-                                    <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider" style="color: #f59e0b; width: 20%;">ชุดข้อมูล</th>
-                                    <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider" style="color: #f59e0b;">คอลัมน์ 1 (เลขคี่)</th>
-                                    <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider" style="color: #f59e0b;">คอลัมน์ 2 (เลขคู่)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: #f59e0b;">คู่ลำดับ</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: #f59e0b;">คอลัมน์ 1 (เลขคี่)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider" style="color: #f59e0b;">คอลัมน์ 2 (เลขคู่)</th>
                                 </tr>
                             </thead>
                             <tbody id="table-body"></tbody>
@@ -96,7 +96,13 @@
     </div>
 
     <script>
-        // State Management
+        // Configuration
+        const config = {
+            col1Label: 'คอลัมน์ 1 (เลขคี่)',
+            col2Label: 'คอลัมน์ 2 (เลขคู่)'
+        };
+
+        // State
         let uploadedFiles = [];
         let tableData = [];
 
@@ -105,3 +111,183 @@
         const fileInput = document.getElementById('file-input');
         const fileListSection = document.getElementById('file-list-section');
         const fileGrid = document.getElementById('file-grid');
+        const fileCount = document.getElementById('file-count');
+        const clearBtn = document.getElementById('clear-btn');
+        const generateBtn = document.getElementById('generate-btn');
+        const tableSection = document.getElementById('table-section');
+        const tableBody = document.getElementById('table-body');
+        const downloadBtn = document.getElementById('download-btn');
+
+        // Toast Helper
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium shadow-lg';
+            const bgColor = type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : '#f59e0b';
+            toast.style.cssText = `background:${bgColor};color:#0f0f23;`;
+            toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info'}" style="width:16px;height:16px;"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Extract Number from filename
+        function extractNumber(filename) {
+            const nameOnly = filename.replace(/\.[^/.]+$/, '');
+            const matches = nameOnly.match(/\d+/g);
+            if (matches) return parseInt(matches[matches.length - 1], 10);
+            return null;
+        }
+
+        // File Management
+        function handleFiles(files) {
+            const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+            if (imageFiles.length === 0) {
+                showToast('กรุณาเลือกเฉพาะไฟล์รูปภาพ', 'error');
+                return;
+            }
+
+            imageFiles.forEach(file => {
+                const num = extractNumber(file.name);
+                uploadedFiles.push({
+                    file,
+                    name: file.name,
+                    number: num,
+                    url: URL.createObjectURL(file)
+                });
+            });
+
+            renderFileList();
+            showToast(`เพิ่มไฟล์ ${imageFiles.length} รายการสำเร็จ`);
+            tableSection.classList.add('hidden');
+        }
+
+        function renderFileList() {
+            fileListSection.classList.toggle('hidden', uploadedFiles.length === 0);
+            fileCount.textContent = uploadedFiles.length;
+            fileGrid.innerHTML = '';
+
+            uploadedFiles.forEach((item, idx) => {
+                const card = document.createElement('div');
+                card.className = 'file-card relative rounded-xl overflow-hidden group border border-[#2a2a4a]';
+                card.style.cssText = `background:#1e1e38; animation-delay: ${idx * 0.05}s;`;
+                
+                const badgeColor = item.number === null ? '#ef4444' : (item.number % 2 !== 0 ? '#f59e0b' : '#8b5cf6');
+                const badgeText = item.number === null ? 'ไม่มีเลข' : (item.number % 2 !== 0 ? `คี่ #${item.number}` : `คู่ #${item.number}`);
+
+                card.innerHTML = `
+                    <div class="aspect-square">
+                        <img src="${item.url}" class="w-full h-full object-cover transition-transform group-hover:scale-110">
+                    </div>
+                    <span class="absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded text-white" style="background:${badgeColor}">${badgeText}</span>
+                    <button onclick="removeFile(${idx})" class="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-500/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <i data-lucide="x" style="width:12px;height:12px;"></i>
+                    </button>
+                    <div class="p-2 bg-[#1e1e38]">
+                        <p class="text-[10px] truncate text-gray-400" title="${item.name}">${item.name}</p>
+                    </div>
+                `;
+                fileGrid.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        window.removeFile = function(idx) {
+            URL.revokeObjectURL(uploadedFiles[idx].url);
+            uploadedFiles.splice(idx, 1);
+            renderFileList();
+            tableSection.classList.add('hidden');
+        };
+
+        clearBtn.onclick = () => {
+            uploadedFiles.forEach(f => URL.revokeObjectURL(f.url));
+            uploadedFiles = [];
+            renderFileList();
+            tableSection.classList.add('hidden');
+            showToast('ล้างไฟล์ทั้งหมดแล้ว', 'info');
+        };
+
+        // Drag & Drop Listeners
+        ['dragenter', 'dragover'].forEach(e => dropZone.addEventListener(e, (ev) => { ev.preventDefault(); dropZone.classList.add('dragover'); }));
+        ['dragleave', 'drop'].forEach(e => dropZone.addEventListener(e, (ev) => { ev.preventDefault(); dropZone.classList.remove('dragover'); }));
+        dropZone.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files));
+        fileInput.onchange = (e) => { handleFiles(e.target.files); e.target.value = ''; };
+
+        // Table Generation
+        generateBtn.onclick = () => {
+            const withNumbers = uploadedFiles.filter(f => f.number !== null);
+            if (withNumbers.length === 0) {
+                showToast('ไม่พบไฟล์ที่มีตัวเลขในชื่อ', 'error');
+                return;
+            }
+
+            const oddFiles = withNumbers.filter(f => f.number % 2 !== 0).sort((a, b) => a.number - b.number);
+            const evenFiles = withNumbers.filter(f => f.number % 2 === 0).sort((a, b) => a.number - b.number);
+            const maxRows = Math.max(oddFiles.length, evenFiles.length);
+
+            tableData = [];
+            for (let i = 0; i < maxRows; i++) {
+                tableData.push({
+                    odd: oddFiles[i] || null,
+                    even: evenFiles[i] || null
+                });
+            }
+
+            renderTable();
+            tableSection.classList.remove('hidden');
+            tableSection.classList.add('table-appear');
+            tableSection.scrollIntoView({ behavior: 'smooth' });
+            showToast(`จัดเรียงเสร็จสิ้น ${maxRows} แถว`);
+        };
+
+        function renderTable() {
+            tableBody.innerHTML = '';
+            tableData.forEach((row, idx) => {
+                const tr = document.createElement('tr');
+                tr.style.background = idx % 2 === 0 ? '#16162b' : '#1a1a30';
+                tr.className = 'hover:bg-white/5 transition-colors';
+                
+                const pairText = (row.odd ? row.odd.number : '-') + ' / ' + (row.even ? row.even.number : '-');
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 text-sm font-mono font-bold text-[#f59e0b]">${pairText}</td>
+                    <td class="px-6 py-4 text-sm text-gray-200">${row.odd ? row.odd.name : '<span class="text-gray-600">—</span>'}</td>
+                    <td class="px-6 py-4 text-sm text-gray-200">${row.even ? row.even.name : '<span class="text-gray-600">—</span>'}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // CSV Export
+        downloadBtn.onclick = () => {
+            if (tableData.length === 0) return;
+
+            let csv = '\uFEFF'; // Excel Thai support (BOM)
+            csv += `ลำดับคู่,${config.col1Label},${config.col2Label}\n`;
+
+            tableData.forEach(row => {
+                const id = (row.odd ? row.odd.number : '') + '-' + (row.even ? row.even.number : '');
+                const oddName = row.odd ? `"${row.odd.name}"` : '';
+                const evenName = row.even ? `"${row.even.name}"` : '';
+                csv += `${id},${oddName},${evenName}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `image_mapping_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showToast('ดาวน์โหลด CSV สำเร็จ!');
+        };
+
+        // Init Lucide
+        lucide.createIcons();
+    </script>
+</body>
+</html>
