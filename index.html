@@ -3,36 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Organizer Pro</title>
+    <title>Image Organizer Pro - Premium Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&family=Montserrat:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #6366f1;
-            --secondary: #a855f7;
-            --success: #22c55e;
-            --bg: #f8fafc;
-            --glass: rgba(255, 255, 255, 0.8);
+            --secondary: #ec4899;
+            --success: #10b981;
+            --dark: #1e293b;
+            --glass: rgba(255, 255, 255, 0.9);
         }
 
         body {
             font-family: 'Sarabun', sans-serif;
-            background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+            background: radial-gradient(circle at top left, #e0e7ff, #fae8ff);
             min-height: 100vh;
             margin: 0;
-            display: flex;
-            justify-content: center;
             padding: 40px 20px;
+            color: var(--dark);
         }
 
-        .card {
+        .container {
+            max-width: 1100px;
+            margin: auto;
             background: var(--glass);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 1000px;
+            backdrop-filter: blur(15px);
+            border-radius: 30px;
             padding: 40px;
-            border: 1px solid rgba(255,255,255,0.5);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255,255,255,0.6);
         }
 
         h1 {
@@ -40,219 +39,226 @@
             text-align: center;
             background: linear-gradient(to right, var(--primary), var(--secondary));
             -webkit-background-clip: text;
+            -webkit-fill-color: transparent;
             -webkit-text-fill-color: transparent;
-            font-size: 2.5rem;
-            margin-bottom: 30px;
+            font-size: 2.8rem;
+            margin-bottom: 10px;
         }
 
-        /* Upload Zone */
-        .upload-area {
-            border: 2px dashed #cbd5e1;
-            border-radius: 16px;
-            padding: 40px;
+        .subtitle { text-align: center; color: #64748b; margin-bottom: 30px; }
+
+        /* Dropzone & Preview */
+        .upload-section {
+            background: white;
+            border: 3px dashed #dee2e6;
+            border-radius: 20px;
+            padding: 30px;
             text-align: center;
             transition: 0.3s;
-            background: rgba(255,255,255,0.5);
             cursor: pointer;
-            margin-bottom: 20px;
         }
 
-        .upload-area:hover {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.05);
+        .upload-section:hover { border-color: var(--primary); background: #f8faff; }
+
+        #instantPreview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+            max-height: 250px;
+            overflow-y: auto;
+            padding: 10px;
         }
 
-        #fileInput { display: none; }
+        .preview-item {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 2px solid white;
+        }
 
-        .btn-group {
+        /* Control Panel */
+        .controls {
             display: flex;
+            flex-wrap: wrap;
             gap: 15px;
             justify-content: center;
-            margin-top: 20px;
+            align-items: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(99, 102, 241, 0.05);
+            border-radius: 20px;
         }
 
-        .btn {
-            padding: 12px 28px;
+        select, .btn {
+            padding: 12px 25px;
             border-radius: 12px;
-            border: none;
+            font-size: 1rem;
             font-weight: 600;
+            border: none;
             cursor: pointer;
             transition: 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 1rem;
         }
 
-        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
-        .btn-success { background: var(--success); color: white; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3); }
-        .btn:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; }
-        .btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
-
-        /* Table Style */
-        .table-wrapper {
-            margin-top: 40px;
-            overflow-x: auto;
-            border-radius: 16px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        select {
             background: white;
+            border: 1px solid #cbd5e1;
+            outline: none;
+            color: var(--dark);
         }
 
-        th {
-            background: #f1f5f9;
-            padding: 15px;
-            color: #475569;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 0.85rem;
+        .btn-main { background: var(--primary); color: white; }
+        .btn-export { background: var(--success); color: white; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); filter: brightness(1.1); }
+
+        /* Table */
+        .table-container {
+            margin-top: 20px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
         }
 
-        td {
-            padding: 15px;
-            border-bottom: 1px solid #f1f5f9;
-            text-align: center;
-            width: 50%;
-        }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th { background: #f8fafc; padding: 20px; color: #475569; border-bottom: 2px solid #e2e8f0; }
+        td { padding: 20px; border-bottom: 1px solid #f1f5f9; text-align: center; width: 50%; }
 
-        .img-container {
+        .cell-content {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
-        .img-preview {
-            width: 120px;
-            height: 120px;
+        .cell-img {
+            width: 150px;
+            height: 150px;
             object-fit: cover;
-            border-radius: 12px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            border: 3px solid white;
+            border-radius: 15px;
+            border: 4px solid #f1f5f9;
         }
 
-        .filename {
-            font-size: 0.75rem;
-            color: #64748b;
-            font-weight: bold;
-        }
-
-        .empty-slot {
-            color: #cbd5e1;
-            font-style: italic;
-            font-size: 0.9rem;
-        }
+        .file-label { font-weight: bold; color: var(--primary); font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
-<div class="card">
+<div class="container">
     <h1>Image Organizer</h1>
-    
-    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-        <p style="font-size: 1.2rem; color: #475569;">คลิกเพื่อเลือกรูปภาพจำนวนมาก</p>
-        <p style="color: #94a3b8; font-size: 0.9rem;">(ชื่อไฟล์ควรเป็นตัวเลขเพื่อให้ระบบเรียงได้ถูกต้อง)</p>
-        <input type="file" id="fileInput" multiple accept="image/*">
+    <p class="subtitle">อัปโหลดรูปภาพเพื่อจัดกลุ่ม คี่-คู่ และส่งออกไฟล์ตามต้องการ</p>
+
+    <div class="upload-section" onclick="document.getElementById('fileInput').click()">
+        <p style="font-size: 1.1rem; font-weight: 600;">เลือกรูปภาพทั้งหมดของคุณที่นี่</p>
+        <input type="file" id="fileInput" multiple accept="image/*" onchange="showInstantPreview(this)">
+        <div id="instantPreview"></div>
     </div>
 
-    <div class="btn-group">
-        <button class="btn btn-primary" onclick="generateVisualTable()">
-            ✨ สร้างตารางออร่า
-        </button>
-        <button id="downloadBtn" class="btn btn-success" onclick="downloadCSV()" disabled>
-            📥 ดาวน์โหลด CSV
-        </button>
+    <div class="controls">
+        <button class="btn btn-main" onclick="processImages()">✨ สร้างตารางรูปภาพ</button>
+        
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span>ส่งออกเป็น:</span>
+            <select id="exportFormat">
+                <option value="csv">ไฟล์ CSV (Excel)</option>
+                <option value="json">ไฟล์ JSON</option>
+            </select>
+        </div>
+
+        <button id="dlBtn" class="btn btn-export" onclick="handleExport()" disabled>📥 ดาวน์โหลดไฟล์</button>
     </div>
 
-    <div id="tableContainer" class="table-wrapper"></div>
+    <div id="tableOutput" class="table-container"></div>
 </div>
 
 <script>
-    let csvRows = [];
+    let globalData = [];
 
-    function generateVisualTable() {
-        const fileInput = document.getElementById('fileInput');
-        const files = Array.from(fileInput.files);
+    // แสดงรูปทันทีที่เลือก (Live Preview)
+    function showInstantPreview(input) {
+        const previewGrid = document.getElementById('instantPreview');
+        previewGrid.innerHTML = '';
         
-        if (files.length === 0) {
-            alert('ช่วยเลือกรูปภาพก่อนนะจ๊ะ!');
-            return;
+        if (input.files) {
+            Array.from(input.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'preview-item';
+                    previewGrid.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            });
         }
-
-        // 1. จัดการข้อมูลและเรียงเลข
-        const fileData = files.map(file => {
-            const num = parseInt(file.name.replace(/\D/g, '')) || 0;
-            return { file, num, url: URL.createObjectURL(file), name: file.name };
-        });
-
-        fileData.sort((a, b) => a.num - b.num);
-
-        const odds = fileData.filter(item => item.num % 2 !== 0);
-        const evens = fileData.filter(item => item.num % 2 === 0);
-
-        // 2. สร้างตาราง Visual
-        const maxRows = Math.max(odds.length, evens.length);
-        let tableHtml = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>คอลัมน์ 1 (เลขคี่)</th>
-                        <th>คอลัมน์ 2 (เลขคู่)</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        csvRows = []; // ล้างข้อมูลเก่าสำหรับ CSV
-
-        for (let i = 0; i < maxRows; i++) {
-            const odd = odds[i];
-            const even = evens[i];
-
-            // เก็บชื่อไฟล์ไว้ลง CSV
-            csvRows.push([odd ? odd.name : "", even ? even.name : ""]);
-
-            tableHtml += `
-                <tr>
-                    <td>${createImgBox(odd)}</td>
-                    <td>${createImgBox(even)}</td>
-                </tr>
-            `;
-        }
-
-        tableHtml += `</tbody></table>`;
-        document.getElementById('tableContainer').innerHTML = tableHtml;
-        document.getElementById('downloadBtn').disabled = false;
     }
 
-    function createImgBox(item) {
-        if (!item) return '<span class="empty-slot">ไม่มีข้อมูล</span>';
+    // ประมวลผลสร้างตาราง
+    function processImages() {
+        const files = Array.from(document.getElementById('fileInput').files);
+        if (files.length === 0) return alert("เลือกรูปก่อนนะจ๊ะ!");
+
+        // ดึงเลขจากชื่อและคัดแยก
+        const items = files.map(f => ({
+            name: f.name,
+            num: parseInt(f.name.replace(/\D/g, '')) || 0,
+            url: URL.createObjectURL(f)
+        })).sort((a, b) => a.num - b.num);
+
+        const odds = items.filter(i => i.num % 2 !== 0);
+        const evens = items.filter(i => i.num % 2 === 0);
+        const maxRows = Math.max(odds.length, evens.length);
+
+        globalData = []; // ล้างข้อมูลเก่า
+        let html = `<table><thead><tr><th>คอลัมน์ 1 (เลขคี่)</th><th>คอลัมน์ 2 (เลขคู่)</th></tr></thead><tbody>`;
+
+        for (let i = 0; i < maxRows; i++) {
+            const o = odds[i];
+            const e = evens[i];
+            globalData.push({ odd: o ? o.name : "", even: e ? e.name : "" });
+
+            html += `<tr>
+                <td>${renderCell(o)}</td>
+                <td>${renderCell(e)}</td>
+            </tr>`;
+        }
+
+        html += `</tbody></table>`;
+        document.getElementById('tableOutput').innerHTML = html;
+        document.getElementById('dlBtn').disabled = false;
+    }
+
+    function renderCell(item) {
+        if (!item) return '<span style="color:#cbd5e1">ว่าง</span>';
         return `
-            <div class="img-container">
-                <img src="${item.url}" class="img-preview">
-                <span class="filename">${item.name}</span>
+            <div class="cell-content">
+                <img src="${item.url}" class="cell-img">
+                <span class="file-label">${item.name}</span>
             </div>
         `;
     }
 
-    function downloadCSV() {
-        let csvContent = "\uFEFF"; // รองรับภาษาไทย
-        csvContent += "Column 1 (Odd),Column 2 (Even)\n";
-        
-        csvRows.forEach(row => {
-            csvContent += row.join(",") + "\n";
-        });
+    // ฟังก์ชัน Export ตามรูปแบบที่เลือก
+    function handleExport() {
+        const format = document.getElementById('exportFormat').value;
+        let blob, filename;
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
+        if (format === 'csv') {
+            let csv = "\uFEFFColumn 1 (Odd),Column 2 (Even)\n";
+            globalData.forEach(row => csv += `${row.odd},${row.even}\n`);
+            blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            filename = "organized_images.csv";
+        } else {
+            const json = JSON.stringify(globalData, null, 2);
+            blob = new Blob([json], { type: 'application/json' });
+            filename = "organized_images.json";
+        }
+
         const link = document.createElement("a");
-        link.href = url;
-        link.download = "organized_images.csv";
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
         link.click();
     }
 </script>
