@@ -3,42 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aura Pro - Embedded Image Excel</title>
+    <title>Aura Pro - Pure Image Excel</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&family=Montserrat:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #6366f1; --secondary: #f43f5e; --success: #10b981; }
         body { font-family: 'Sarabun', sans-serif; background: #0f172a; color: #f1f5f9; margin: 0; padding: 40px 20px; }
-        .container { max-width: 900px; margin: auto; background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(20px); border-radius: 30px; padding: 40px; border: 1px solid rgba(255,255,255,0.1); }
+        .container { max-width: 900px; margin: auto; background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(20px); border-radius: 30px; padding: 40px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
         h1 { font-family: 'Montserrat', sans-serif; text-align: center; background: linear-gradient(to right, #818cf8, #fb7185); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 2.5rem; }
-        .upload-zone { border: 2px dashed rgba(255,255,255,0.2); border-radius: 20px; padding: 30px; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02); }
+        
+        .upload-zone { border: 2px dashed rgba(255,255,255,0.2); border-radius: 20px; padding: 30px; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02); transition: 0.3s; }
+        .upload-zone:hover { border-color: var(--primary); background: rgba(99, 102, 241, 0.1); }
+        
         #previewGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 15px; }
-        .preview-img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; }
-        .controls { display: flex; flex-direction: column; gap: 15px; margin: 25px 0; }
-        .btn { padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 1rem; }
+        .preview-img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); }
+        
+        .controls { display: flex; flex-direction: column; gap: 12px; margin: 25px 0; }
+        .btn { padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         .btn-build { background: var(--primary); color: white; }
         .btn-excel { background: var(--success); color: white; }
-        .btn:disabled { opacity: 0.3; }
+        .btn:disabled { opacity: 0.2; cursor: not-allowed; transform: none !important; }
+        .btn:hover:not(:disabled) { transform: translateY(-3px); filter: brightness(1.2); }
+        
         .table-area { margin-top: 20px; background: white; border-radius: 15px; overflow: hidden; color: #1e293b; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 15px; border: 1px solid #eee; text-align: center; }
-        .img-in-table { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; }
+        th { background: #f1f5f9; padding: 15px; border-bottom: 2px solid #e2e8f0; font-weight: 600; }
+        td { padding: 10px; border: 1px solid #eee; text-align: center; height: 120px; }
+        .img-in-table { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; vertical-align: middle; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Aura Excel Embedding</h1>
+    <h1>Aura Photo Grid</h1>
     
     <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
-        <p>เลือกรูปภาพ (ระบบจะดึงรูปฝังลงไฟล์ Excel ให้เลย)</p>
+        <p>✨ เลือกรูปภาพ (ระบบจะจัดคี่-คู่ และฝังรูปลง Excel ให้ทันที) ✨</p>
         <input type="file" id="fileInput" multiple accept="image/*" onchange="showPreview(this)" style="display:none">
         <div id="previewGrid"></div>
     </div>
 
     <div class="controls">
-        <button class="btn btn-build" onclick="generateTable()">1. ตรวจสอบตารางหน้าเว็บ</button>
-        <button id="dlExcel" class="btn btn-excel" onclick="exportExcelWithImages()" disabled>2. ดาวน์โหลด Excel (แบบมีรูปฝัง)</button>
+        <button class="btn btn-build" onclick="generateTable()">1. แสดงพรีวิวตาราง</button>
+        <button id="dlExcel" class="btn btn-excel" onclick="exportExcelWithImages()" disabled>2. ดาวน์โหลด Excel (เฉพาะรูปภาพ)</button>
     </div>
 
     <div id="tableOutput" class="table-area"></div>
@@ -64,12 +71,10 @@
 
     function generateTable() {
         const files = Array.from(document.getElementById('fileInput').files);
-        if (files.length === 0) return alert("กรุณาเลือกไฟล์ก่อนครับ");
+        if (files.length === 0) return alert("เลือกรูปก่อนนะครับ!");
 
-        // จัดกลุ่ม คี่-คู่
         const items = files.map(f => ({
             file: f,
-            name: f.name,
             num: parseInt(f.name.replace(/\D/g, '')) || 0
         })).sort((a, b) => a.num - b.num);
 
@@ -79,11 +84,11 @@
 
         processedFiles = { odds, evens, rowCount };
 
-        let html = `<table><thead><tr><th>คอลัมน์ 1 (คี่)</th><th>คอลัมน์ 2 (คู่)</th></tr></thead><tbody>`;
+        let html = `<table><thead><tr><th>คอลัมน์ 1 (เลขคี่)</th><th>คอลัมน์ 2 (เลขคู่)</th></tr></thead><tbody>`;
         for (let i = 0; i < rowCount; i++) {
             html += `<tr>
-                <td>${odds[i] ? `<img src="${URL.createObjectURL(odds[i].file)}" class="img-in-table"><br>${odds[i].name}` : '-'}</td>
-                <td>${evens[i] ? `<img src="${URL.createObjectURL(evens[i].file)}" class="img-in-table"><br>${evens[i].name}` : '-'}</td>
+                <td>${odds[i] ? `<img src="${URL.createObjectURL(odds[i].file)}" class="img-in-table">` : ''}</td>
+                <td>${evens[i] ? `<img src="${URL.createObjectURL(evens[i].file)}" class="img-in-table">` : ''}</td>
             </tr>`;
         }
         document.getElementById('tableOutput').innerHTML = html + "</tbody></table>";
@@ -92,19 +97,23 @@
 
     async function exportExcelWithImages() {
         const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Image Report');
+        const worksheet = workbook.addWorksheet('Aura Image Gallery');
 
-        // ตั้งค่าหัวตาราง
+        // ตั้งค่าหัวตาราง และความกว้างคอลัมน์
         worksheet.columns = [
-            { header: 'คอลัมน์ 1 (เลขคี่)', key: 'odd', width: 25 },
-            { header: 'คอลัมน์ 2 (เลขคู่)', key: 'even', width: 25 }
+            { header: 'คอลัมน์ 1 (เลขคี่)', key: 'odd', width: 20 },
+            { header: 'คอลัมน์ 2 (เลขคู่)', key: 'even', width: 20 }
         ];
+
+        // จัดการ Style หัวตาราง
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).alignment = { horizontal: 'center' };
 
         const { odds, evens, rowCount } = processedFiles;
 
         for (let i = 0; i < rowCount; i++) {
-            const rowNumber = i + 2; // +2 เพราะแถว 1 คือ Header
-            worksheet.getRow(rowNumber).height = 100; // ตั้งความสูงแถวให้พอดีรูป
+            const rowNumber = i + 2; 
+            worksheet.getRow(rowNumber).height = 100; // ตั้งความสูงแถวเพื่อรองรับรูป
 
             // ฝังรูปคอลัมน์ 1 (คี่)
             if (odds[i]) {
@@ -113,11 +122,9 @@
                     extension: 'png',
                 });
                 worksheet.addImage(imageId, {
-                    tl: { col: 0.2, row: rowNumber - 0.8 },
+                    tl: { col: 0.1, row: rowNumber - 0.9 }, // ปรับตำแหน่งให้อยู่กลางเซลล์
                     ext: { width: 120, height: 120 }
                 });
-                worksheet.getCell(`A${rowNumber}`).value = odds[i].name;
-                worksheet.getCell(`A${rowNumber}`).alignment = { vertical: 'bottom', horizontal: 'center' };
             }
 
             // ฝังรูปคอลัมน์ 2 (คู่)
@@ -127,24 +134,20 @@
                     extension: 'png',
                 });
                 worksheet.addImage(imageId, {
-                    tl: { col: 1.2, row: rowNumber - 0.8 },
+                    tl: { col: 1.1, row: rowNumber - 0.9 },
                     ext: { width: 120, height: 120 }
                 });
-                worksheet.getCell(`B${rowNumber}`).value = evens[i].name;
-                worksheet.getCell(`B${rowNumber}`).alignment = { vertical: 'bottom', horizontal: 'center' };
             }
         }
 
-        // ดาวน์โหลดไฟล์
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `Aura_Report_Images.xlsx`;
+        link.download = `Aura_Gallery_Only.xlsx`;
         link.click();
     }
 
-    // ฟังก์ชันแปลงไฟล์เป็น Base64 เพื่อฝังใน Excel
     function fileToBase64(file) {
         return new Promise((resolve) => {
             const reader = new FileReader();
