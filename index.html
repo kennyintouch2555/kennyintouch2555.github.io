@@ -3,273 +3,448 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Flashcard Pro - Anki Style</title>
+    <title>Anki Master Pro - Flashcard System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Kanit', sans-serif; background-color: #f0f2f5; }
-        .card-inner {
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
-            cursor: pointer;
-        }
-        .card-flipped .card-inner { transform: rotateY(180deg); }
-        .card-front, .card-back {
-            backface-visibility: hidden;
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-        }
-        .card-back { transform: rotateY(180deg); }
+        body { font-family: 'Kanit', sans-serif; transition: all 0.3s ease; }
+        .perspective-1000 { perspective: 1000px; }
+        .card-inner { transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; }
+        .is-flipped { transform: rotateY(180deg); }
+        .backface-hidden { backface-visibility: hidden; position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+        .gradient-bg { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
+<body class="bg-slate-100 text-slate-900">
 
 <div id="app">
-    <div id="login-screen" class="min-h-screen flex items-center justify-center">
-        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
+    <div id="auth-screen" class="min-h-screen flex items-center justify-center p-4 gradient-bg">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md">
             <div class="text-center mb-8">
-                <div class="bg-indigo-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-200">
-                    <i data-lucide="layers" class="text-white w-8 h-8"></i>
+                <div class="inline-block p-4 bg-indigo-100 rounded-2xl mb-4 text-indigo-600">
+                    <i data-lucide="brain-circuit" class="w-10 h-10"></i>
                 </div>
-                <h1 class="text-3xl font-bold text-slate-800">Flashcard Pro</h1>
-                <p class="text-slate-500">ระบบทบทวนความจำอัจฉริยะ</p>
+                <h1 id="auth-title" class="text-3xl font-bold">เข้าสู่ระบบ</h1>
+                <p class="text-slate-500">ยินดีต้อนรับสู่ Anki Master Pro</p>
             </div>
             <div class="space-y-4">
-                <input type="text" id="username" placeholder="ชื่อผู้ใช้" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
-                <input type="password" id="password" placeholder="รหัสผ่าน" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
-                <button onclick="auth.login()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition shadow-md">เข้าสู่ระบบ</button>
+                <div class="relative">
+                    <i data-lucide="user" class="absolute left-3 top-3.5 w-5 h-5 text-slate-400"></i>
+                    <input type="text" id="auth-user" placeholder="ชื่อผู้ใช้" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div class="relative">
+                    <i data-lucide="lock" class="absolute left-3 top-3.5 w-5 h-5 text-slate-400"></i>
+                    <input type="password" id="auth-pass" placeholder="รหัสผ่าน" class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <button onclick="ctrl.authSubmit()" id="auth-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all">เข้าสู่ระบบ</button>
+                <p id="auth-toggle" onclick="ctrl.toggleAuth()" class="text-center text-sm text-indigo-600 cursor-pointer font-medium">ยังไม่มีบัญชี? สมัครสมาชิก</p>
             </div>
         </div>
     </div>
 
-    <div id="main-screen" class="hidden min-h-screen">
-        <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
-            <div class="flex items-center gap-2 font-bold text-xl text-indigo-600">
-                <i data-lucide="zap" class="fill-indigo-600"></i> Flashcard Pro
+    <div id="main-screen" class="hidden min-h-screen pb-20">
+        <nav class="glass border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+            <div class="flex items-center gap-3 font-bold text-2xl text-indigo-600">
+                <i data-lucide="zap" class="fill-indigo-600"></i> <span>ANKI PRO</span>
             </div>
             <div class="flex items-center gap-4">
-                <span id="user-display" class="text-slate-600 font-medium"></span>
-                <button onclick="auth.logout()" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition">
-                    <i data-lucide="log-out"></i>
-                </button>
+                <div class="relative group cursor-pointer" onclick="ctrl.showNotifications()">
+                    <i data-lucide="bell" class="text-slate-600 hover:text-indigo-600"></i>
+                    <span id="notif-dot" class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border-2 border-white rounded-full hidden"></span>
+                </div>
+                <div class="h-8 w-[1px] bg-slate-200"></div>
+                <span id="display-name" class="font-semibold text-slate-700">User</span>
+                <button onclick="ctrl.logout()" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"><i data-lucide="log-out"></i></button>
             </div>
         </nav>
 
-        <div class="max-w-5xl mx-auto p-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-                    <div class="bg-blue-100 p-3 rounded-xl text-blue-600"><i data-lucide="copy"></i></div>
-                    <div><p class="text-sm text-slate-500">การ์ดทั้งหมด</p><h3 id="stat-total" class="text-2xl font-bold">0</h3></div>
+        <div class="max-w-6xl mx-auto p-6">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="text-3xl font-bold">โฟลเดอร์สำรับ (Decks)</h2>
+                    <p class="text-slate-500">เลือกโฟลเดอร์ที่ต้องการทบทวน</p>
                 </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-                    <div class="bg-orange-100 p-3 rounded-xl text-orange-600"><i data-lucide="clock"></i></div>
-                    <div><p class="text-sm text-slate-500">รอทบทวน</p><h3 id="stat-due" class="text-2xl font-bold">0</h3></div>
-                </div>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <button onclick="ui.showUpload()" class="w-full h-full flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition border-2 border-dashed border-indigo-200 font-semibold">
-                        <i data-lucide="plus-circle"></i> เพิ่มรูปภาพ/การ์ด
-                    </button>
-                </div>
+                <button onclick="ui.modal('deck-modal', true)" class="bg-indigo-600 text-white px-6 py-3 rounded-2xl flex items-center gap-2 hover:bg-indigo-700 shadow-md transition-all font-semibold">
+                    <i data-lucide="folder-plus"></i> สร้างโฟลเดอร์ใหม่
+                </button>
             </div>
 
-            <div id="study-area" class="hidden flex flex-col items-center py-10">
-                <div class="mb-6 flex gap-4">
-                    <label class="flex items-center gap-2 cursor-pointer bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
-                        <input type="checkbox" id="mode-swap" class="w-4 h-4 text-indigo-600">
-                        <span class="text-sm font-medium">สลับหน้า-หลัง (Flip Mode)</span>
-                    </label>
+            <div id="deck-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 </div>
+        </div>
+    </div>
 
-                <div id="card-widget" class="relative w-full max-w-xl h-96 perspective-1000">
-                    <div id="card-container" class="card-inner w-full h-full relative shadow-2xl rounded-3xl overflow-hidden border border-slate-200">
-                        <div class="card-front bg-white flex flex-col items-center justify-center p-8 text-center">
-                            <div id="front-content" class="text-2xl font-medium"></div>
-                        </div>
-                        <div class="card-back bg-slate-50 flex flex-col items-center justify-center p-8 text-center">
-                            <div id="back-content" class="text-2xl font-medium"></div>
-                        </div>
+    <div id="study-screen" class="hidden min-h-screen bg-white fixed inset-0 z-[60] flex flex-col">
+        <header class="p-4 border-b flex justify-between items-center">
+            <button onclick="ctrl.exitStudy()" class="text-slate-500 hover:bg-slate-100 p-2 rounded-lg"><i data-lucide="x"></i></button>
+            <div class="text-center">
+                <h3 id="study-deck-name" class="font-bold text-lg">กำลังเรียนรู้</h3>
+                <div class="flex gap-2 justify-center text-[10px] font-bold uppercase tracking-wider">
+                    <span id="count-new" class="text-blue-500">NEW: 0</span>
+                    <span id="count-due" class="text-green-500">DUE: 0</span>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="ctrl.toggleFlipMode()" id="flip-mode-btn" class="text-xs bg-slate-100 px-3 py-1 rounded-full border border-slate-200 font-medium">Flip: OFF</button>
+            </div>
+        </header>
+
+        <main class="flex-1 flex flex-col items-center justify-center p-6 bg-slate-50">
+            <div class="w-full max-w-2xl aspect-[4/3] perspective-1000">
+                <div id="anki-card" class="card-inner relative w-full h-full cursor-pointer" onclick="ctrl.revealAnswer()">
+                    <div class="backface-hidden bg-white rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 border border-slate-200 text-center">
+                        <div id="card-front-content" class="text-2xl font-semibold overflow-auto max-h-full w-full"></div>
+                        <p class="absolute bottom-6 text-slate-300 text-sm">คลิกเพื่อดูเฉลย</p>
+                    </div>
+                    <div class="backface-hidden rotate-y-180 bg-slate-50 rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 border border-indigo-100 text-center">
+                        <div id="card-back-content" class="text-2xl font-semibold overflow-auto max-h-full w-full"></div>
                     </div>
                 </div>
-
-                <div id="answer-controls" class="mt-10 hidden grid grid-cols-4 gap-3 w-full max-w-xl">
-                    <button onclick="anki.rate(1)" class="bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl transition shadow-lg shadow-red-100 font-semibold">Again</button>
-                    <button onclick="anki.rate(2)" class="bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl transition shadow-lg shadow-orange-100 font-semibold">Hard</button>
-                    <button onclick="anki.rate(3)" class="bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl transition shadow-lg shadow-green-100 font-semibold">Good</button>
-                    <button onclick="anki.rate(4)" class="bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl transition shadow-lg shadow-blue-100 font-semibold">Easy</button>
-                </div>
-                
-                <button id="show-answer-btn" onclick="ui.showAnswer()" class="mt-10 w-full max-w-xl bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl font-bold transition">เฉลยคำตอบ (Space)</button>
             </div>
 
-            <div id="empty-state" class="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-300">
-                <i data-lucide="box" class="w-16 h-16 mx-auto text-slate-300 mb-4"></i>
-                <h3 class="text-xl font-semibold text-slate-600">ไม่มีการ์ดให้เรียนในขณะนี้</h3>
-                <p class="text-slate-400">อัปโหลดรูปภาพเพื่อเริ่มต้นใช้งาน</p>
+            <div id="anki-controls" class="mt-8 w-full max-w-2xl hidden grid grid-cols-4 gap-4">
+                <button onclick="ctrl.rate(1)" class="group flex flex-col items-center p-4 bg-white border border-red-100 rounded-2xl hover:bg-red-500 transition-all shadow-sm">
+                    <span class="text-red-500 group-hover:text-white font-bold">Again</span>
+                    <span class="text-[10px] text-slate-400 group-hover:text-white">< 1m</span>
+                </button>
+                <button onclick="ctrl.rate(2)" class="group flex flex-col items-center p-4 bg-white border border-orange-100 rounded-2xl hover:bg-orange-500 transition-all shadow-sm">
+                    <span class="text-orange-500 group-hover:text-white font-bold">Hard</span>
+                    <span id="t-hard" class="text-[10px] text-slate-400 group-hover:text-white">2d</span>
+                </button>
+                <button onclick="ctrl.rate(3)" class="group flex flex-col items-center p-4 bg-white border border-green-100 rounded-2xl hover:bg-green-500 transition-all shadow-sm">
+                    <span class="text-green-500 group-hover:text-white font-bold">Good</span>
+                    <span id="t-good" class="text-[10px] text-slate-400 group-hover:text-white">4d</span>
+                </button>
+                <button onclick="ctrl.rate(4)" class="group flex flex-col items-center p-4 bg-white border border-blue-100 rounded-2xl hover:bg-blue-500 transition-all shadow-sm">
+                    <span class="text-blue-500 group-hover:text-white font-bold">Easy</span>
+                    <span id="t-easy" class="text-[10px] text-slate-400 group-hover:text-white">7d</span>
+                </button>
+            </div>
+            
+            <button id="hint-btn" onclick="ctrl.revealAnswer()" class="mt-8 px-10 py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-200 hover:scale-105 transition-all">ดูเฉลย (Space)</button>
+        </main>
+    </div>
+
+    <div id="deck-modal" class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-indigo-600"><i data-lucide="folder-plus"></i> สร้างโฟลเดอร์</h2>
+            <input type="text" id="new-deck-name" placeholder="ชื่อโฟลเดอร์ เช่น ศัพท์ภาษาอังกฤษ" class="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl mb-6 outline-none focus:ring-2 focus:ring-indigo-500">
+            <div class="flex gap-3">
+                <button onclick="ctrl.createDeck()" class="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-700 transition-all">สร้างเลย</button>
+                <button onclick="ui.modal('deck-modal', false)" class="flex-1 bg-slate-100 text-slate-500 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all">ยกเลิก</button>
             </div>
         </div>
     </div>
 
-    <div id="upload-modal" class="fixed inset-0 bg-black/50 hidden backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-lg w-full p-8">
-            <h2 class="text-2xl font-bold mb-4">อัปโหลดรูปภาพ (เลขคี่=หน้า, เลขคู่=หลัง)</h2>
-            <p class="text-sm text-slate-500 mb-6">ระบบจะจับคู่ให้อัตโนมัติ เช่น 1.jpg จะเป็นหน้า และ 2.jpg จะเป็นหลัง</p>
-            <input type="file" id="file-input" multiple accept="image/*" class="mb-6 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-            <div class="flex gap-3">
-                <button onclick="ui.processUpload()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold">บันทึกข้อมูล</button>
-                <button onclick="ui.hideUpload()" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl">ยกเลิก</button>
+    <div id="upload-modal" class="fixed inset-0 bg-black/60 hidden backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-2 text-indigo-600">เพิ่มการ์ดแบบจัดเต็ม</h2>
+            <p class="text-sm text-slate-500 mb-6">เลือกรูปภาพที่มีชื่อเป็นตัวเลข (เลขคี่=หน้า, เลขคู่=หลัง)</p>
+            <div class="space-y-6">
+                <div class="border-2 border-dashed border-slate-200 rounded-3xl p-10 text-center hover:border-indigo-400 transition-colors cursor-pointer relative">
+                    <input type="file" id="files" multiple accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer">
+                    <i data-lucide="image-plus" class="w-12 h-12 text-slate-300 mx-auto mb-2"></i>
+                    <p class="text-slate-400 font-medium">ลากไฟล์รูปภาพมาวางที่นี่ หรือ คลิกเพื่อเลือก</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="ctrl.saveCards()" class="flex-1 bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg">บันทึกเข้าโฟลเดอร์</button>
+                    <button onclick="ui.modal('upload-modal', false)" class="flex-1 bg-slate-100 text-slate-500 py-4 rounded-2xl font-bold">ปิด</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-// --- Core Logic ---
-let state = {
-    user: null,
-    cards: JSON.parse(localStorage.getItem('fcp_cards')) || [],
-    currentIndex: 0,
-    isFlipped: false
+// --- CORE DATA & ALGORITHM ---
+const SM2 = (quality, card) => {
+    let { interval, repetition, efactor } = card;
+    if (quality >= 3) {
+        if (repetition === 0) interval = 1;
+        else if (repetition === 1) interval = 6;
+        else interval = Math.round(interval * efactor);
+        repetition++;
+    } else {
+        repetition = 0;
+        interval = 1;
+    }
+    efactor = efactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+    if (efactor < 1.3) efactor = 1.3;
+    return { interval, repetition, efactor, due: Date.now() + (interval * 24 * 60 * 60 * 1000) };
 };
 
-const auth = {
-    login: () => {
-        const user = document.getElementById('username').value;
-        if(user) {
-            state.user = user;
-            document.getElementById('login-screen').classList.add('hidden');
-            document.getElementById('main-screen').classList.remove('hidden');
-            document.getElementById('user-display').innerText = user;
-            ui.refreshStats();
-            ui.loadNextCard();
+// --- APP STATE ---
+let db = {
+    users: JSON.parse(localStorage.getItem('anki_users')) || [],
+    currentUser: null,
+    decks: [],
+    activeDeckId: null,
+    studyQueue: [],
+    flipMode: false
+};
+
+const ctrl = {
+    // Auth System
+    toggleAuth: () => {
+        const title = document.getElementById('auth-title');
+        const btn = document.getElementById('auth-btn');
+        const toggle = document.getElementById('auth-toggle');
+        const isLogin = title.innerText === 'เข้าสู่ระบบ';
+        title.innerText = isLogin ? 'สมัครสมาชิก' : 'เข้าสู่ระบบ';
+        btn.innerText = isLogin ? 'สมัครเลย' : 'เข้าสู่ระบบ';
+        toggle.innerText = isLogin ? 'มีบัญชีอยู่แล้ว? เข้าสู่ระบบ' : 'ยังไม่มีบัญชี? สมัครสมาชิก';
+    },
+
+    authSubmit: () => {
+        const u = document.getElementById('auth-user').value;
+        const p = document.getElementById('auth-pass').value;
+        if(!u || !p) return alert("กรุณากรอกข้อมูลให้ครบ");
+
+        const isLogin = document.getElementById('auth-title').innerText === 'เข้าสู่ระบบ';
+        if(isLogin) {
+            const user = db.users.find(x => x.u === u && x.p === p);
+            if(user) ctrl.login(user);
+            else alert("ชื่อผู้ใช้หรือรหัสผ่านผิด");
+        } else {
+            if(db.users.find(x => x.u === u)) return alert("ชื่อนี้ถูกใช้ไปแล้ว");
+            const newUser = { u, p, decks: [] };
+            db.users.push(newUser);
+            localStorage.setItem('anki_users', JSON.stringify(db.users));
+            alert("สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ");
+            ctrl.toggleAuth();
         }
     },
+
+    login: (user) => {
+        db.currentUser = user;
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('main-screen').classList.remove('hidden');
+        document.getElementById('display-name').innerText = user.u;
+        ui.renderDecks();
+        ctrl.checkNotifications();
+    },
+
     logout: () => {
-        state.user = null;
-        document.getElementById('login-screen').classList.remove('hidden');
-        document.getElementById('main-screen').classList.add('hidden');
+        location.reload();
+    },
+
+    // Deck Management
+    createDeck: () => {
+        const name = document.getElementById('new-deck-name').value;
+        if(!name) return;
+        const newDeck = { id: Date.now(), name, cards: [] };
+        db.currentUser.decks.push(newDeck);
+        ctrl.saveToLocal();
+        ui.modal('deck-modal', false);
+        ui.renderDecks();
+        document.getElementById('new-deck-name').value = '';
+    },
+
+    // Card Management (The logic you requested)
+    openUpload: (deckId) => {
+        db.activeDeckId = deckId;
+        ui.modal('upload-modal', true);
+    },
+
+    saveCards: () => {
+        const fileInput = document.getElementById('files');
+        const files = Array.from(fileInput.files);
+        if(files.length === 0) return alert("กรุณาเลือกไฟล์");
+
+        // Logic เรียงลำดับเลข คี่-คู่ ตามชื่อไฟล์
+        const sortedFiles = files.sort((a, b) => {
+            const numA = parseInt(a.name.replace(/\D/g, '')) || 0;
+            const numB = parseInt(b.name.replace(/\D/g, '')) || 0;
+            return numA - numB;
+        });
+
+        const readerPromises = sortedFiles.map(file => {
+            return new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve({ name: file.name, url: e.target.result });
+                reader.readAsDataURL(file);
+            });
+        });
+
+        Promise.all(readerPromises).then(results => {
+            const deck = db.currentUser.decks.find(d => d.id === db.activeDeckId);
+            for(let i = 0; i < results.length; i++) {
+                const num = parseInt(results[i].name.replace(/\D/g, ''));
+                if(num % 2 !== 0) { // เลขคี่ = หน้า
+                    const front = results[i].url;
+                    const nextFile = results.find(f => parseInt(f.name.replace(/\D/g, '')) === num + 1);
+                    const back = nextFile ? nextFile.url : "ไม่มีข้อมูลด้านหลัง";
+                    
+                    deck.cards.push({
+                        id: Date.now() + i,
+                        front: `<img src="${front}" class="max-h-80 mx-auto rounded-lg shadow-sm">`,
+                        back: back.startsWith('data') ? `<img src="${back}" class="max-h-80 mx-auto rounded-lg shadow-sm">` : back,
+                        interval: 0,
+                        repetition: 0,
+                        efactor: 2.5,
+                        due: Date.now()
+                    });
+                }
+            }
+            ctrl.saveToLocal();
+            ui.modal('upload-modal', false);
+            ui.renderDecks();
+            alert("อัปโหลดและจัดเรียงหน้า-หลังเรียบร้อย!");
+        });
+    },
+
+    // Study System (Anki Engine)
+    startStudy: (deckId) => {
+        const deck = db.currentUser.decks.find(d => d.id === deckId);
+        db.activeDeckId = deckId;
+        db.studyQueue = deck.cards.filter(c => c.due <= Date.now());
+        
+        if(db.studyQueue.length === 0) return alert("โฟลเดอร์นี้ไม่มีการ์ดที่ต้องทบทวนในตอนนี้!");
+        
+        document.getElementById('study-screen').classList.remove('hidden');
+        document.getElementById('study-deck-name').innerText = deck.name;
+        ctrl.showNextCard();
+    },
+
+    showNextCard: () => {
+        if(db.studyQueue.length === 0) {
+            alert("ยินดีด้วย! คุณทบทวนโฟลเดอร์นี้เสร็จแล้ว");
+            ctrl.exitStudy();
+            return;
+        }
+
+        const card = db.studyQueue[0];
+        const isFlipped = db.flipMode;
+
+        document.getElementById('card-front-content').innerHTML = isFlipped ? card.back : card.front;
+        document.getElementById('card-back-content').innerHTML = isFlipped ? card.front : card.back;
+        
+        document.getElementById('anki-card').classList.remove('is-flipped');
+        document.getElementById('anki-controls').classList.add('hidden');
+        document.getElementById('hint-btn').classList.remove('hidden');
+        
+        // Update counts
+        const deck = db.currentUser.decks.find(d => d.id === db.activeDeckId);
+        document.getElementById('count-new').innerText = `NEW: ${deck.cards.filter(c => c.repetition === 0).length}`;
+        document.getElementById('count-due').innerText = `DUE: ${db.studyQueue.length}`;
+    },
+
+    revealAnswer: () => {
+        document.getElementById('anki-card').classList.add('is-flipped');
+        document.getElementById('anki-controls').classList.remove('hidden');
+        document.getElementById('hint-btn').classList.add('hidden');
+    },
+
+    rate: (q) => {
+        const card = db.studyQueue.shift();
+        const updated = SM2(q, card);
+        Object.assign(card, updated);
+        
+        ctrl.saveToLocal();
+        ctrl.showNextCard();
+        ctrl.checkNotifications();
+    },
+
+    toggleFlipMode: () => {
+        db.flipMode = !db.flipMode;
+        document.getElementById('flip-mode-btn').innerText = `Flip: ${db.flipMode ? 'ON' : 'OFF'}`;
+        document.getElementById('flip-mode-btn').classList.toggle('bg-indigo-600');
+        document.getElementById('flip-mode-btn').classList.toggle('text-white');
+        ctrl.showNextCard();
+    },
+
+    exitStudy: () => {
+        document.getElementById('study-screen').classList.add('hidden');
+        ui.renderDecks();
+    },
+
+    // Utils
+    saveToLocal: () => {
+        const idx = db.users.findIndex(u => u.u === db.currentUser.u);
+        db.users[idx] = db.currentUser;
+        localStorage.setItem('anki_users', JSON.stringify(db.users));
+    },
+
+    checkNotifications: () => {
+        let totalDue = 0;
+        db.currentUser.decks.forEach(d => {
+            totalDue += d.cards.filter(c => c.due <= Date.now()).length;
+        });
+        const dot = document.getElementById('notif-dot');
+        if(totalDue > 0) dot.classList.remove('hidden');
+        else dot.classList.add('hidden');
+    },
+
+    showNotifications: () => {
+        let totalDue = 0;
+        let nextDate = null;
+        
+        db.currentUser.decks.forEach(d => {
+            d.cards.forEach(c => {
+                if(c.due <= Date.now()) totalDue++;
+                if(!nextDate || c.due < nextDate) nextDate = c.due;
+            });
+        });
+
+        if(totalDue > 0) {
+            alert(`มีแฟลชการ์ดที่ต้องทบทวนทั้งหมด ${totalDue} ใบ ในวันนี้!`);
+        } else if(nextDate) {
+            alert(`วันนี้ทำครบแล้ว! วันที่จะต้องทบทวนครั้งต่อไปคือ: ${new Date(nextDate).toLocaleDateString('th-TH')}`);
+        } else {
+            alert("ยังไม่มีการ์ดในระบบ");
+        }
     }
 };
 
 const ui = {
-    showUpload: () => document.getElementById('upload-modal').classList.remove('hidden'),
-    hideUpload: () => document.getElementById('upload-modal').classList.add('hidden'),
-    
-    processUpload: () => {
-        const input = document.getElementById('file-input');
-        const files = Array.from(input.files);
-        if(files.length === 0) return;
+    modal: (id, show) => {
+        document.getElementById(id).classList.toggle('hidden', !show);
+    },
 
-        // จัดเรียงตามตัวเลขในชื่อไฟล์
-        const sortedFiles = files.sort((a, b) => {
-            const numA = parseInt(a.name.match(/\d+/)) || 0;
-            const numB = parseInt(b.name.match(/\d+/)) || 0;
-            return numA - numB;
+    renderDecks: () => {
+        const list = document.getElementById('deck-list');
+        list.innerHTML = '';
+        db.currentUser.decks.forEach(deck => {
+            const dueCount = deck.cards.filter(c => c.due <= Date.now()).length;
+            const div = document.createElement('div');
+            div.className = "bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-xl transition-all group";
+            div.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-indigo-50 text-indigo-600 rounded-2xl group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                        <i data-lucide="folder"></i>
+                    </div>
+                    ${dueCount > 0 ? `<span class="bg-red-500 text-white text-[10px] px-2 py-1 rounded-full font-bold animate-pulse">${dueCount} DUE</span>` : ''}
+                </div>
+                <h3 class="text-xl font-bold mb-1">${deck.name}</h3>
+                <p class="text-slate-400 text-sm mb-6">มีการ์ดทั้งหมด ${deck.cards.length} ใบ</p>
+                <div class="flex gap-2">
+                    <button onclick="ctrl.startStudy(${deck.id})" class="flex-1 bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-indigo-600 transition-all">เริ่มเรียน</button>
+                    <button onclick="ctrl.openUpload(${deck.id})" class="w-12 h-12 flex items-center justify-center bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all"><i data-lucide="plus"></i></button>
+                </div>
+            `;
+            list.appendChild(div);
         });
-
-        const newCards = [];
-        for(let i = 0; i < sortedFiles.length; i++) {
-            const num = parseInt(sortedFiles[i].name.match(/\d+/));
-            if(num % 2 !== 0) { // เลขคี่
-                const frontImg = URL.createObjectURL(sortedFiles[i]);
-                const nextFile = sortedFiles.find(f => {
-                    const n = parseInt(f.name.match(/\d+/));
-                    return n === num + 1;
-                });
-                
-                newCards.push({
-                    id: Date.now() + i,
-                    front: `<img src="${frontImg}" class="max-h-64 rounded-lg">`,
-                    back: nextFile ? `<img src="${URL.createObjectURL(nextFile)}" class="max-h-64 rounded-lg">` : "ไม่มีคำตอบ",
-                    interval: 0,
-                    due: Date.now()
-                });
-            }
-        }
-
-        state.cards = [...state.cards, ...newCards];
-        localStorage.setItem('fcp_cards', JSON.stringify(state.cards));
-        ui.hideUpload();
-        ui.refreshStats();
-        ui.loadNextCard();
-        input.value = "";
-    },
-
-    refreshStats: () => {
-        document.getElementById('stat-total').innerText = state.cards.length;
-        const dueCount = state.cards.filter(c => c.due <= Date.now()).length;
-        document.getElementById('stat-due').innerText = dueCount;
-        
-        if(state.cards.length > 0) {
-            document.getElementById('study-area').classList.remove('hidden');
-            document.getElementById('empty-state').classList.add('hidden');
-        } else {
-            document.getElementById('study-area').classList.add('hidden');
-            document.getElementById('empty-state').classList.remove('hidden');
-        }
-    },
-
-    loadNextCard: () => {
-        const dueCards = state.cards.filter(c => c.due <= Date.now());
-        if(dueCards.length === 0) {
-            ui.refreshStats();
-            return;
-        }
-
-        state.currentCard = dueCards[0];
-        const isSwap = document.getElementById('mode-swap').checked;
-        
-        document.getElementById('front-content').innerHTML = isSwap ? state.currentCard.back : state.currentCard.front;
-        document.getElementById('back-content').innerHTML = isSwap ? state.currentCard.front : state.currentCard.back;
-        
-        // Reset card state
-        document.getElementById('card-container').classList.remove('card-flipped');
-        document.getElementById('answer-controls').classList.add('hidden');
-        document.getElementById('show-answer-btn').classList.remove('hidden');
-    },
-
-    showAnswer: () => {
-        document.getElementById('card-container').classList.add('card-flipped');
-        document.getElementById('answer-controls').classList.remove('hidden');
-        document.getElementById('show-answer-btn').classList.add('hidden');
+        lucide.createIcons();
     }
 };
 
-const anki = {
-    rate: (score) => {
-        // อัลกอริทึม Spaced Repetition อย่างง่าย
-        // score: 1=Again, 2=Hard, 3=Good, 4=Easy
-        const cardIndex = state.cards.findIndex(c => c.id === state.currentCard.id);
-        const dayInMs = 24 * 60 * 60 * 1000;
-        
-        let interval = state.cards[cardIndex].interval || 1;
-        
-        if(score === 1) interval = 0;
-        else if(score === 2) interval *= 1.2;
-        else if(score === 3) interval *= 2.5;
-        else if(score === 4) interval *= 4;
-
-        state.cards[cardIndex].interval = interval;
-        state.cards[cardIndex].due = Date.now() + (interval * dayInMs);
-        
-        localStorage.setItem('fcp_cards', JSON.stringify(state.cards));
-        ui.loadNextCard();
-        ui.refreshStats();
-    }
-};
-
-// Keyboard Shortcuts
+// Keyboard Listeners
 window.addEventListener('keydown', (e) => {
-    if(e.code === 'Space') ui.showAnswer();
-    if(e.key === '1' && !document.getElementById('answer-controls').classList.contains('hidden')) anki.rate(1);
-    if(e.key === '2' && !document.getElementById('answer-controls').classList.contains('hidden')) anki.rate(2);
-    if(e.key === '3' && !document.getElementById('answer-controls').classList.contains('hidden')) anki.rate(3);
-    if(e.key === '4' && !document.getElementById('answer-controls').classList.contains('hidden')) anki.rate(4);
+    if(e.code === 'Space') {
+        if(!document.getElementById('study-screen').classList.contains('hidden')) {
+            if(document.getElementById('anki-controls').classList.contains('hidden')) ctrl.revealAnswer();
+        }
+    }
+    if(e.key >= '1' && e.key <= '4') {
+        if(!document.getElementById('anki-controls').classList.contains('hidden')) ctrl.rate(parseInt(e.key));
+    }
 });
 
-// Initialize Lucide Icons
+// Init Icons
 lucide.createIcons();
-
 </script>
 </body>
 </html>
