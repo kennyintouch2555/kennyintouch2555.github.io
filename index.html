@@ -3,159 +3,273 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aura Pro - Pure Image Excel</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <title>Ultimate Flashcard Pro - Anki Style</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #6366f1; --secondary: #f43f5e; --success: #10b981; }
-        body { font-family: 'Sarabun', sans-serif; background: #0f172a; color: #f1f5f9; margin: 0; padding: 40px 20px; }
-        .container { max-width: 900px; margin: auto; background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(20px); border-radius: 30px; padding: 40px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
-        h1 { font-family: 'Montserrat', sans-serif; text-align: center; background: linear-gradient(to right, #818cf8, #fb7185); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 2.5rem; }
-        
-        .upload-zone { border: 2px dashed rgba(255,255,255,0.2); border-radius: 20px; padding: 30px; text-align: center; cursor: pointer; background: rgba(255,255,255,0.02); transition: 0.3s; }
-        .upload-zone:hover { border-color: var(--primary); background: rgba(99, 102, 241, 0.1); }
-        
-        #previewGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; margin-top: 15px; }
-        .preview-img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); }
-        
-        .controls { display: flex; flex-direction: column; gap: 12px; margin: 25px 0; }
-        .btn { padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .btn-build { background: var(--primary); color: white; }
-        .btn-excel { background: var(--success); color: white; }
-        .btn:disabled { opacity: 0.2; cursor: not-allowed; transform: none !important; }
-        .btn:hover:not(:disabled) { transform: translateY(-3px); filter: brightness(1.2); }
-        
-        .table-area { margin-top: 20px; background: white; border-radius: 15px; overflow: hidden; color: #1e293b; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #f1f5f9; padding: 15px; border-bottom: 2px solid #e2e8f0; font-weight: 600; }
-        td { padding: 10px; border: 1px solid #eee; text-align: center; height: 120px; }
-        .img-in-table { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; vertical-align: middle; }
+        body { font-family: 'Kanit', sans-serif; background-color: #f0f2f5; }
+        .card-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+        .card-flipped .card-inner { transform: rotateY(180deg); }
+        .card-front, .card-back {
+            backface-visibility: hidden;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+        }
+        .card-back { transform: rotateY(180deg); }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800">
 
-<div class="container">
-    <h1>Aura Photo Grid</h1>
-    
-    <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
-        <p>✨ เลือกรูปภาพ (ระบบจะจัดคี่-คู่ และฝังรูปลง Excel ให้ทันที) ✨</p>
-        <input type="file" id="fileInput" multiple accept="image/*" onchange="showPreview(this)" style="display:none">
-        <div id="previewGrid"></div>
+<div id="app">
+    <div id="login-screen" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
+            <div class="text-center mb-8">
+                <div class="bg-indigo-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-200">
+                    <i data-lucide="layers" class="text-white w-8 h-8"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-slate-800">Flashcard Pro</h1>
+                <p class="text-slate-500">ระบบทบทวนความจำอัจฉริยะ</p>
+            </div>
+            <div class="space-y-4">
+                <input type="text" id="username" placeholder="ชื่อผู้ใช้" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                <input type="password" id="password" placeholder="รหัสผ่าน" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition">
+                <button onclick="auth.login()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition shadow-md">เข้าสู่ระบบ</button>
+            </div>
+        </div>
     </div>
 
-    <div class="controls">
-        <button class="btn btn-build" onclick="generateTable()">1. แสดงพรีวิวตาราง</button>
-        <button id="dlExcel" class="btn btn-excel" onclick="exportExcelWithImages()" disabled>2. ดาวน์โหลด Excel (เฉพาะรูปภาพ)</button>
+    <div id="main-screen" class="hidden min-h-screen">
+        <nav class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+            <div class="flex items-center gap-2 font-bold text-xl text-indigo-600">
+                <i data-lucide="zap" class="fill-indigo-600"></i> Flashcard Pro
+            </div>
+            <div class="flex items-center gap-4">
+                <span id="user-display" class="text-slate-600 font-medium"></span>
+                <button onclick="auth.logout()" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition">
+                    <i data-lucide="log-out"></i>
+                </button>
+            </div>
+        </nav>
+
+        <div class="max-w-5xl mx-auto p-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div class="bg-blue-100 p-3 rounded-xl text-blue-600"><i data-lucide="copy"></i></div>
+                    <div><p class="text-sm text-slate-500">การ์ดทั้งหมด</p><h3 id="stat-total" class="text-2xl font-bold">0</h3></div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div class="bg-orange-100 p-3 rounded-xl text-orange-600"><i data-lucide="clock"></i></div>
+                    <div><p class="text-sm text-slate-500">รอทบทวน</p><h3 id="stat-due" class="text-2xl font-bold">0</h3></div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <button onclick="ui.showUpload()" class="w-full h-full flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-100 transition border-2 border-dashed border-indigo-200 font-semibold">
+                        <i data-lucide="plus-circle"></i> เพิ่มรูปภาพ/การ์ด
+                    </button>
+                </div>
+            </div>
+
+            <div id="study-area" class="hidden flex flex-col items-center py-10">
+                <div class="mb-6 flex gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
+                        <input type="checkbox" id="mode-swap" class="w-4 h-4 text-indigo-600">
+                        <span class="text-sm font-medium">สลับหน้า-หลัง (Flip Mode)</span>
+                    </label>
+                </div>
+
+                <div id="card-widget" class="relative w-full max-w-xl h-96 perspective-1000">
+                    <div id="card-container" class="card-inner w-full h-full relative shadow-2xl rounded-3xl overflow-hidden border border-slate-200">
+                        <div class="card-front bg-white flex flex-col items-center justify-center p-8 text-center">
+                            <div id="front-content" class="text-2xl font-medium"></div>
+                        </div>
+                        <div class="card-back bg-slate-50 flex flex-col items-center justify-center p-8 text-center">
+                            <div id="back-content" class="text-2xl font-medium"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="answer-controls" class="mt-10 hidden grid grid-cols-4 gap-3 w-full max-w-xl">
+                    <button onclick="anki.rate(1)" class="bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl transition shadow-lg shadow-red-100 font-semibold">Again</button>
+                    <button onclick="anki.rate(2)" class="bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl transition shadow-lg shadow-orange-100 font-semibold">Hard</button>
+                    <button onclick="anki.rate(3)" class="bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl transition shadow-lg shadow-green-100 font-semibold">Good</button>
+                    <button onclick="anki.rate(4)" class="bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl transition shadow-lg shadow-blue-100 font-semibold">Easy</button>
+                </div>
+                
+                <button id="show-answer-btn" onclick="ui.showAnswer()" class="mt-10 w-full max-w-xl bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl font-bold transition">เฉลยคำตอบ (Space)</button>
+            </div>
+
+            <div id="empty-state" class="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-300">
+                <i data-lucide="box" class="w-16 h-16 mx-auto text-slate-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-slate-600">ไม่มีการ์ดให้เรียนในขณะนี้</h3>
+                <p class="text-slate-400">อัปโหลดรูปภาพเพื่อเริ่มต้นใช้งาน</p>
+            </div>
+        </div>
     </div>
 
-    <div id="tableOutput" class="table-area"></div>
+    <div id="upload-modal" class="fixed inset-0 bg-black/50 hidden backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-8">
+            <h2 class="text-2xl font-bold mb-4">อัปโหลดรูปภาพ (เลขคี่=หน้า, เลขคู่=หลัง)</h2>
+            <p class="text-sm text-slate-500 mb-6">ระบบจะจับคู่ให้อัตโนมัติ เช่น 1.jpg จะเป็นหน้า และ 2.jpg จะเป็นหลัง</p>
+            <input type="file" id="file-input" multiple accept="image/*" class="mb-6 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+            <div class="flex gap-3">
+                <button onclick="ui.processUpload()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold">บันทึกข้อมูล</button>
+                <button onclick="ui.hideUpload()" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-    let processedFiles = [];
+// --- Core Logic ---
+let state = {
+    user: null,
+    cards: JSON.parse(localStorage.getItem('fcp_cards')) || [],
+    currentIndex: 0,
+    isFlipped: false
+};
 
-    function showPreview(input) {
-        const grid = document.getElementById('previewGrid');
-        grid.innerHTML = '';
-        Array.from(input.files).forEach(file => {
-            const reader = new FileReader();
-            reader.onload = e => {
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.className = 'preview-img';
-                grid.appendChild(img);
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    function generateTable() {
-        const files = Array.from(document.getElementById('fileInput').files);
-        if (files.length === 0) return alert("เลือกรูปก่อนนะครับ!");
-
-        const items = files.map(f => ({
-            file: f,
-            num: parseInt(f.name.replace(/\D/g, '')) || 0
-        })).sort((a, b) => a.num - b.num);
-
-        const odds = items.filter(i => i.num % 2 !== 0);
-        const evens = items.filter(i => i.num % 2 === 0);
-        const rowCount = Math.max(odds.length, evens.length);
-
-        processedFiles = { odds, evens, rowCount };
-
-        let html = `<table><thead><tr><th>คอลัมน์ 1 (เลขคี่)</th><th>คอลัมน์ 2 (เลขคู่)</th></tr></thead><tbody>`;
-        for (let i = 0; i < rowCount; i++) {
-            html += `<tr>
-                <td>${odds[i] ? `<img src="${URL.createObjectURL(odds[i].file)}" class="img-in-table">` : ''}</td>
-                <td>${evens[i] ? `<img src="${URL.createObjectURL(evens[i].file)}" class="img-in-table">` : ''}</td>
-            </tr>`;
+const auth = {
+    login: () => {
+        const user = document.getElementById('username').value;
+        if(user) {
+            state.user = user;
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('main-screen').classList.remove('hidden');
+            document.getElementById('user-display').innerText = user;
+            ui.refreshStats();
+            ui.loadNextCard();
         }
-        document.getElementById('tableOutput').innerHTML = html + "</tbody></table>";
-        document.getElementById('dlExcel').disabled = false;
+    },
+    logout: () => {
+        state.user = null;
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('main-screen').classList.add('hidden');
     }
+};
 
-    async function exportExcelWithImages() {
-        const workbook = new ExcelJS.Workbook();
-        const worksheet = workbook.addWorksheet('Aura Image Gallery');
+const ui = {
+    showUpload: () => document.getElementById('upload-modal').classList.remove('hidden'),
+    hideUpload: () => document.getElementById('upload-modal').classList.add('hidden'),
+    
+    processUpload: () => {
+        const input = document.getElementById('file-input');
+        const files = Array.from(input.files);
+        if(files.length === 0) return;
 
-        // ตั้งค่าหัวตาราง และความกว้างคอลัมน์
-        worksheet.columns = [
-            { header: 'คอลัมน์ 1 (เลขคี่)', key: 'odd', width: 20 },
-            { header: 'คอลัมน์ 2 (เลขคู่)', key: 'even', width: 20 }
-        ];
+        // จัดเรียงตามตัวเลขในชื่อไฟล์
+        const sortedFiles = files.sort((a, b) => {
+            const numA = parseInt(a.name.match(/\d+/)) || 0;
+            const numB = parseInt(b.name.match(/\d+/)) || 0;
+            return numA - numB;
+        });
 
-        // จัดการ Style หัวตาราง
-        worksheet.getRow(1).font = { bold: true };
-        worksheet.getRow(1).alignment = { horizontal: 'center' };
-
-        const { odds, evens, rowCount } = processedFiles;
-
-        for (let i = 0; i < rowCount; i++) {
-            const rowNumber = i + 2; 
-            worksheet.getRow(rowNumber).height = 100; // ตั้งความสูงแถวเพื่อรองรับรูป
-
-            // ฝังรูปคอลัมน์ 1 (คี่)
-            if (odds[i]) {
-                const imageId = workbook.addImage({
-                    base64: await fileToBase64(odds[i].file),
-                    extension: 'png',
+        const newCards = [];
+        for(let i = 0; i < sortedFiles.length; i++) {
+            const num = parseInt(sortedFiles[i].name.match(/\d+/));
+            if(num % 2 !== 0) { // เลขคี่
+                const frontImg = URL.createObjectURL(sortedFiles[i]);
+                const nextFile = sortedFiles.find(f => {
+                    const n = parseInt(f.name.match(/\d+/));
+                    return n === num + 1;
                 });
-                worksheet.addImage(imageId, {
-                    tl: { col: 0.1, row: rowNumber - 0.9 }, // ปรับตำแหน่งให้อยู่กลางเซลล์
-                    ext: { width: 120, height: 120 }
-                });
-            }
-
-            // ฝังรูปคอลัมน์ 2 (คู่)
-            if (evens[i]) {
-                const imageId = workbook.addImage({
-                    base64: await fileToBase64(evens[i].file),
-                    extension: 'png',
-                });
-                worksheet.addImage(imageId, {
-                    tl: { col: 1.1, row: rowNumber - 0.9 },
-                    ext: { width: 120, height: 120 }
+                
+                newCards.push({
+                    id: Date.now() + i,
+                    front: `<img src="${frontImg}" class="max-h-64 rounded-lg">`,
+                    back: nextFile ? `<img src="${URL.createObjectURL(nextFile)}" class="max-h-64 rounded-lg">` : "ไม่มีคำตอบ",
+                    interval: 0,
+                    due: Date.now()
                 });
             }
         }
 
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `Aura_Gallery_Only.xlsx`;
-        link.click();
-    }
+        state.cards = [...state.cards, ...newCards];
+        localStorage.setItem('fcp_cards', JSON.stringify(state.cards));
+        ui.hideUpload();
+        ui.refreshStats();
+        ui.loadNextCard();
+        input.value = "";
+    },
 
-    function fileToBase64(file) {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result.split(',')[1]);
-            reader.readAsDataURL(file);
-        });
+    refreshStats: () => {
+        document.getElementById('stat-total').innerText = state.cards.length;
+        const dueCount = state.cards.filter(c => c.due <= Date.now()).length;
+        document.getElementById('stat-due').innerText = dueCount;
+        
+        if(state.cards.length > 0) {
+            document.getElementById('study-area').classList.remove('hidden');
+            document.getElementById('empty-state').classList.add('hidden');
+        } else {
+            document.getElementById('study-area').classList.add('hidden');
+            document.getElementById('empty-state').classList.remove('hidden');
+        }
+    },
+
+    loadNextCard: () => {
+        const dueCards = state.cards.filter(c => c.due <= Date.now());
+        if(dueCards.length === 0) {
+            ui.refreshStats();
+            return;
+        }
+
+        state.currentCard = dueCards[0];
+        const isSwap = document.getElementById('mode-swap').checked;
+        
+        document.getElementById('front-content').innerHTML = isSwap ? state.currentCard.back : state.currentCard.front;
+        document.getElementById('back-content').innerHTML = isSwap ? state.currentCard.front : state.currentCard.back;
+        
+        // Reset card state
+        document.getElementById('card-container').classList.remove('card-flipped');
+        document.getElementById('answer-controls').classList.add('hidden');
+        document.getElementById('show-answer-btn').classList.remove('hidden');
+    },
+
+    showAnswer: () => {
+        document.getElementById('card-container').classList.add('card-flipped');
+        document.getElementById('answer-controls').classList.remove('hidden');
+        document.getElementById('show-answer-btn').classList.add('hidden');
     }
+};
+
+const anki = {
+    rate: (score) => {
+        // อัลกอริทึม Spaced Repetition อย่างง่าย
+        // score: 1=Again, 2=Hard, 3=Good, 4=Easy
+        const cardIndex = state.cards.findIndex(c => c.id === state.currentCard.id);
+        const dayInMs = 24 * 60 * 60 * 1000;
+        
+        let interval = state.cards[cardIndex].interval || 1;
+        
+        if(score === 1) interval = 0;
+        else if(score === 2) interval *= 1.2;
+        else if(score === 3) interval *= 2.5;
+        else if(score === 4) interval *= 4;
+
+        state.cards[cardIndex].interval = interval;
+        state.cards[cardIndex].due = Date.now() + (interval * dayInMs);
+        
+        localStorage.setItem('fcp_cards', JSON.stringify(state.cards));
+        ui.loadNextCard();
+        ui.refreshStats();
+    }
+};
+
+// Keyboard Shortcuts
+window.addEventListener('keydown', (e) => {
+    if(e.code === 'Space') ui.showAnswer();
+    if(e.key === '1' && !document.getElementById('answer-controls').classList.contains('hidden')) anki.rate(1);
+    if(e.key === '2' && !document.getElementById('answer-controls').classList.contains('hidden')) anki.rate(2);
+    if(e.key === '3' && !document.getElementById('answer-controls').classList.contains('hidden')) anki.rate(3);
+    if(e.key === '4' && !document.getElementById('answer-controls').classList.contains('hidden')) anki.rate(4);
+});
+
+// Initialize Lucide Icons
+lucide.createIcons();
+
 </script>
-
 </body>
 </html>
